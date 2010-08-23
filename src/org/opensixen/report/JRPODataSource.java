@@ -17,7 +17,8 @@ import net.sf.jasperreports.engine.data.JRAbstractBeanDataSource;
  */
 public class JRPODataSource extends JRAbstractBeanDataSource{
 
-	private int index = 0;
+	// Empieza por -1 porque lo primero que se pide es un next()	*/
+	private int index = -1;
 	
 	private PO[] po;
 	
