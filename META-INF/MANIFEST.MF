@@ -178,6 +178,9 @@ Export-Package: .,
  org.apache.commons.digester.xmlrules,
  org.apache.commons.logging,
  org.apache.commons.logging.impl,
+ org.compiere.interfaces,
+ org.compiere.report,
+ org.compiere.utils,
  org.eclipse.jdt.core.compiler,
  org.eclipse.jdt.internal.compiler,
  org.eclipse.jdt.internal.compiler.ast,
@@ -248,4 +251,5 @@ Export-Package: .,
  org.syntax.jedit.tokenmarker,
  org.w3c.tools.codec
 Require-Bundle: org.opensixen.core.common;bundle-version="1.0.0",
- org.opensixen.base;bundle-version="1.0.0"
+ org.opensixen.base;bundle-version="1.0.0",
+ org.opensixen.libs;bundle-version="1.0.0"
