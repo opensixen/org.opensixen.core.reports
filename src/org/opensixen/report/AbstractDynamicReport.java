@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Properties;
 
 import org.opensixen.model.ColumnDefinition;
+import org.opensixen.model.GroupDefinition;
+import org.opensixen.model.GroupVariable;
 
 import net.sf.jasperreports.engine.JRDataSource;
 import net.sf.jasperreports.engine.JasperPrint;
@@ -18,6 +20,7 @@ import net.sf.jasperreports.view.JasperViewer;
 
 import ar.com.fdvs.dj.core.DynamicJasperHelper;
 import ar.com.fdvs.dj.core.layout.ClassicLayoutManager;
+import ar.com.fdvs.dj.domain.DJCalculation;
 import ar.com.fdvs.dj.domain.DynamicReport;
 import ar.com.fdvs.dj.domain.Style;
 import ar.com.fdvs.dj.domain.builders.ColumnBuilder;
@@ -102,13 +105,13 @@ public abstract class AbstractDynamicReport  {
 		headerStyle.setTransparency(Transparency.OPAQUE);
 
 		headerVariables = new Style("headerVariables");
-		headerVariables.setFont(Font.ARIAL_BIG_BOLD);
+		headerVariables.setFont(Font.ARIAL_SMALL_BOLD);
 		headerVariables.setBorderBottom(Border.THIN);
 		headerVariables.setHorizontalAlign(HorizontalAlign.RIGHT);
 		headerVariables.setVerticalAlign(VerticalAlign.TOP);
 
 		groupVariables = new Style("groupVariables");
-		groupVariables.setFont(Font.ARIAL_MEDIUM_BOLD);
+		groupVariables.setFont(Font.ARIAL_SMALL_BOLD);
 		groupVariables.setTextColor(Color.BLUE);
 		groupVariables.setBorderBottom(Border.THIN);
 		groupVariables.setHorizontalAlign(HorizontalAlign.RIGHT);
@@ -246,7 +249,7 @@ public abstract class AbstractDynamicReport  {
 				if (definition.getHeaderVariables() != null)	{
 					for (GroupVariable group: definition.getHeaderVariables())	{
 						AbstractColumn gcol = m_columns.get(group.getName());
-						DJGroupVariable variable = new DJGroupVariable(gcol, group.getCalculation(), group.getStyle() );
+						DJGroupVariable variable = new DJGroupVariable(gcol, getDJCalculation(group.getCalculation()), getStyle(group.getStyle()) );
 	
 						builder.addHeaderVariable(variable);
 					}
@@ -255,7 +258,7 @@ public abstract class AbstractDynamicReport  {
 				if (definition.getFooterVariables() != null)	{
 					for (GroupVariable group: definition.getFooterVariables())	{
 						AbstractColumn gcol = m_columns.get(group.getName());
-						DJGroupVariable variable = new DJGroupVariable(gcol, group.getCalculation(), group.getStyle() );
+						DJGroupVariable variable = new DJGroupVariable(gcol,  getDJCalculation(group.getCalculation()), getStyle(group.getStyle()) );
 						builder.addFooterVariable(variable);
 					}
 				}
@@ -276,4 +279,22 @@ public abstract class AbstractDynamicReport  {
 		
 		JasperViewer.viewReport(print, false);
 	}
+	
+	public DJCalculation getDJCalculation(int calculation)	{
+		switch (calculation) {
+		case GroupVariable.SUM:
+			return DJCalculation.SUM;
+
+		default:
+			return null;
+		}
+	}
+	
+	public Style getStyle(String style)	{
+		if (style == GroupVariable.STYLE_DEFAULT)	{
+			return groupVariables;
+		}
+		return null;
+	}
+	
 }
