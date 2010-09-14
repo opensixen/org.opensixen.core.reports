@@ -10,8 +10,11 @@ import net.sf.jasperreports.engine.JRDataSource;
 
 import org.adempiere.util.ModelInterfaceGenerator;
 import org.compiere.model.MColumn;
+import org.compiere.model.MRefList;
+import org.compiere.model.MRefTable;
 import org.compiere.model.MTable;
 import org.compiere.model.PO;
+import org.compiere.util.DisplayType;
 import org.opensixen.model.ColumnDefinition;
 import org.opensixen.model.POFactory;
 import org.opensixen.model.QParam;
@@ -68,9 +71,15 @@ public abstract class AbstractPODynamicReport extends
 		definition.setTitle(m_column.get_Translation(m_column.COLUMNNAME_Name));
 
 		// Si es de tipo amount, añadimos formato.
-		if (m_column.getAD_Reference_ID() == 12) {
+		if (m_column.getAD_Reference_ID() == DisplayType.Amount) {
 			definition.setPattern("#,##0.00 €");
 		}
+		
+		if (m_column.getAD_Reference_ID() == DisplayType.Date) {
+			definition.setPattern("dd/MM/yy");
+		}
+		
+		
 
 		return super.createColumn(definition);
 
