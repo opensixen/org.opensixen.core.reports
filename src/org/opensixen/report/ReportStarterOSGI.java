@@ -58,34 +58,80 @@
  * lo gobiernan,  GPL 2.0/CDDL 1.0/EPL 1.0.
  *
  * ***** END LICENSE BLOCK ***** */
+package org.opensixen.report;
 
-package org.opensixen.core.reports;
+import java.io.File;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.logging.Level;
 
-import org.osgi.framework.BundleActivator;
-import org.osgi.framework.BundleContext;
+import net.sf.jasperreports.engine.JasperReport;
+import net.sf.jasperreports.engine.util.JRLoader;
 
-public class Activator implements BundleActivator {
+import org.compiere.report.ReportStarter;
+import org.compiere.util.CLogger;
+import org.opensixen.osgi.BundleProxyClassLoader;
 
-	private static BundleContext context;
 
-	public static BundleContext getContext() {
-		return context;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.osgi.framework.BundleActivator#start(org.osgi.framework.BundleContext)
+/**
+ * ReportStarterOSGI
+ * 
+ *  Report Starter for OSGi bundles
+ *
+ * @author Eloy Gomez
+ * Indeos Consultoria http://www.indeos.es
+ */
+public class ReportStarterOSGI extends ReportStarter {
+	private CLogger log = CLogger.getCLogger(getClass()); 
+	
+	
+	/* (non-Javadoc)
+	 * @see org.compiere.report.ReportStarter#setupCLasspath(org.compiere.report.ReportStarter.JasperData)
 	 */
-	public void start(BundleContext bundleContext) throws Exception {
-		Activator.context = bundleContext;
+	@Override
+	protected void setupCLasspath(JasperData data) {
+		URL reportDir = BundleProxyClassLoader.findResourceInAll(data.getReportDir().getPath()); 
+		java.net.URLClassLoader ucl = new java.net.URLClassLoader(new java.net.URL[]{reportDir}, getClass().getClassLoader());		
+		net.sf.jasperreports.engine.util.JRResourcesUtil.setThreadClassLoader(ucl);
 	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.osgi.framework.BundleActivator#stop(org.osgi.framework.BundleContext)
+	
+	
+	
+	/* (non-Javadoc)
+	 * @see org.compiere.report.ReportStarter#processReport(java.io.File)
 	 */
-	public void stop(BundleContext bundleContext) throws Exception {
-		Activator.context = null;
+	@Override
+	protected JasperData processReport(File reportFile) {
+		String jasperName = reportFile.getName();
+		String resourceName = reportFile.getPath();
+        int pos = jasperName.indexOf('.');
+        if (pos!=-1) jasperName = jasperName.substring(0, pos);
+		
+		File reportDir = new File(reportFile.getParent());
+		
+		JasperReport jasperReport;
+		try {
+			InputStream stream = BundleProxyClassLoader.findResourceInAll(resourceName).openStream();
+			jasperReport = (JasperReport)JRLoader.loadObject(stream);
+		} catch (Exception e) {
+			log.log(Level.SEVERE, "Can't get report source.", e);
+			return null;
+		}
+        
+        JasperData data = new JasperData(jasperReport, reportDir, jasperName, null);
+        return data;
+	}
+	/* (non-Javadoc)
+	 * @see org.compiere.report.ReportStarter#JWScorrectClassPath()
+	 */
+	@Override
+	protected void JWScorrectClassPath() {
+		log.info("Nada que hacer.");
 	}
 
+	
+	
+	
+	
 }
+

@@ -439,46 +439,40 @@ public class ReportStarter implements ProcessCall, ClientProcess
         File reportDir = data.getReportDir();
         
        	// Add reportDir to class path
-		ClassLoader scl = ClassLoader.getSystemClassLoader();
-		try {
-			java.net.URLClassLoader ucl = new java.net.URLClassLoader(new java.net.URL[]{reportDir.toURI().toURL()}, scl);
-			net.sf.jasperreports.engine.util.JRResourcesUtil.setThreadClassLoader(ucl);
-		} catch (MalformedURLException me) {
-			log.warning("Could not add report directory to classpath: "+ me.getMessage());
-		}
+        setupCLasspath(data);
 
         if (jasperReport != null) {
-			File[] subreports;
-
-            // Subreports
-			if(reportPath.startsWith("http://") || reportPath.startsWith("https://"))
-			{
-				// Locate and download subreports from remote webcontext
-				subreports = getHttpSubreports(jasperName + "Subreport", reportPath, fileExtension);
+			if (false) {
+				File[] subreports;
+				// Subreports
+				if (reportPath.startsWith("http://")
+						|| reportPath.startsWith("https://")) {
+					// Locate and download subreports from remote webcontext
+					subreports = getHttpSubreports(jasperName + "Subreport",
+							reportPath, fileExtension);
+				} else if (reportPath.startsWith("attachment:")) {
+					subreports = getAttachmentSubreports(reportPath);
+				} else if (reportPath.startsWith("resource:")) {
+					subreports = getResourceSubreports(name + "Subreport",
+							reportPath, fileExtension);
+				}
+				// TODO: Implement file:/ lookup for subreports
+				else {
+					// Locate subreports from local/remote filesystem
+					subreports = reportDir.listFiles(new FileFilter(jasperName
+							+ "Subreport", reportDir, fileExtension));
+				}
+				for (int i = 0; i < subreports.length; i++) {
+					JasperData subData = processReport(subreports[i]);
+					if (subData.getJasperReport() != null) {
+						params.put(subData.getJasperName(), subData
+								.getJasperFile().getAbsolutePath());
+					}
+				}
 			}
-			else if (reportPath.startsWith("attachment:"))
-			{
-				subreports = getAttachmentSubreports(reportPath);
-			}
-			else if (reportPath.startsWith("resource:"))
-			{
-				subreports = getResourceSubreports(name+ "Subreport", reportPath, fileExtension);
-			}
-			// TODO: Implement file:/ lookup for subreports
-			else
-			{
-				// Locate subreports from local/remote filesystem
-				subreports = reportDir.listFiles( new FileFilter( jasperName+"Subreport", reportDir, fileExtension));
-			}
-
-            for( int i=0; i<subreports.length; i++) {
-                JasperData subData = processReport( subreports[i]);
-                if (subData.getJasperReport()!=null) {
-                    params.put( subData.getJasperName(), subData.getJasperFile().getAbsolutePath());
-                }
-            }
-
-            if (Record_ID > 0)
+			
+			
+			if (Record_ID > 0)
             	params.put("RECORD_ID", new Integer( Record_ID));
 
             // contribution from Ricardo (ralexsander)
@@ -624,6 +618,20 @@ public class ReportStarter implements ProcessCall, ClientProcess
         reportResult( AD_PInstance_ID, null, trxName);
         return true;
     }
+
+	/**
+	 * @param data
+	 */
+	protected void setupCLasspath(JasperData data) {
+		ClassLoader scl = ClassLoader.getSystemClassLoader();
+		try {
+			java.net.URLClassLoader ucl = new java.net.URLClassLoader(new java.net.URL[]{data.getReportDir().toURI().toURL()}, scl);
+			net.sf.jasperreports.engine.util.JRResourcesUtil.setThreadClassLoader(ucl);
+		} catch (MalformedURLException me) {
+			log.warning("Could not add report directory to classpath: "+ me.getMessage());
+		}
+		
+	}
 
 	public static JasperPrint getJasperPrint()
 	{
@@ -1026,7 +1034,7 @@ public class ReportStarter implements ProcessCall, ClientProcess
      * @author rlemeill
      * Correct the class path if loaded from java web start
      */
-    private void JWScorrectClassPath()
+    protected void JWScorrectClassPath()
     {
 		URL jasperreportsAbsoluteURL = Thread.currentThread().getContextClassLoader().getResource("net/sf/jasperreports/engine");
 		String jasperreportsAbsolutePath = "";
