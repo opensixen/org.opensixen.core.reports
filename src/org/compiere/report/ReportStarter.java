@@ -51,6 +51,7 @@ import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.Copies;
 import javax.print.attribute.standard.JobName;
 
+import net.sf.jasperreports.engine.JRDataSource;
 import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JRExporterParameter;
 import net.sf.jasperreports.engine.JRParameter;
@@ -513,6 +514,10 @@ public class ReportStarter implements ProcessCall, ClientProcess
         	
            	params.put("CURRENT_LANG", currLang.getAD_Language());
            	params.put(JRParameter.REPORT_LOCALE, currLang.getLocale());
+           	Map<String, Object> customParameters = getCustomParameters();
+           	if (customParameters != null)	{
+           		params.putAll(getCustomParameters());
+           	}
            	
             // Resources
             File resFile = null;
@@ -544,8 +549,16 @@ public class ReportStarter implements ProcessCall, ClientProcess
 
             Connection conn = null;
             try {
-            	conn = getConnection();
-                jasperPrint = JasperFillManager.fillReport( jasperReport, params, conn);
+            	// If custom DataSource
+            	JRDataSource dataSource = getCustomDataSource();
+            	if (dataSource != null)	{
+            		jasperPrint = JasperFillManager.fillReport( jasperReport, params, dataSource);
+            	}
+            	else {
+            		conn = getConnection();
+            		jasperPrint = JasperFillManager.fillReport( jasperReport, params, conn);
+            	}
+                
                 if (reportData.isDirectPrint() || !processInfo.isPrintPreview())
                 {
                     log.info( "ReportStarter.startProcess print report -" + jasperPrint.getName());
@@ -1259,4 +1272,12 @@ public class ReportStarter implements ProcessCall, ClientProcess
         }
     }
 
+    public Map<String, Object> getCustomParameters()	{
+    	return null;
+    }
+    
+    
+    public JRDataSource getCustomDataSource()	{
+    	return null;
+    }
 }
