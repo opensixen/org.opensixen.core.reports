@@ -79,11 +79,7 @@ public class Activator implements BundleActivator {
 	 * @see org.osgi.framework.BundleActivator#start(org.osgi.framework.BundleContext)
 	 */
 	public void start(BundleContext bundleContext) throws Exception {
-		Activator.context = bundleContext;
-		
-		// Cambiamos la clase para lanzar informes Jasper
-		ProcessUtil.JASPER_STARTER_CLASS = ReportStarterOSGI.class.getName();
-		
+		Activator.context = bundleContext;		
 	}
 
 	/*
