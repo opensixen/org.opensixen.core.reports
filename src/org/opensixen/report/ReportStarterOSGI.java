@@ -71,6 +71,7 @@ import net.sf.jasperreports.engine.util.JRLoader;
 import org.compiere.report.ReportStarter;
 import org.compiere.util.CLogger;
 import org.opensixen.osgi.BundleProxyClassLoader;
+import org.opensixen.osgi.interfaces.IProcessCall;
 
 
 /**
@@ -81,7 +82,7 @@ import org.opensixen.osgi.BundleProxyClassLoader;
  * @author Eloy Gomez
  * Indeos Consultoria http://www.indeos.es
  */
-public class ReportStarterOSGI extends ReportStarter {
+public class ReportStarterOSGI extends ReportStarter implements IProcessCall {
 	private CLogger log = CLogger.getCLogger(getClass()); 
 	
 	

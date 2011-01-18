@@ -61,6 +61,8 @@
 
 package org.opensixen.core.reports;
 
+import org.adempiere.util.ProcessUtil;
+import org.opensixen.report.ReportStarterOSGI;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 
@@ -78,6 +80,10 @@ public class Activator implements BundleActivator {
 	 */
 	public void start(BundleContext bundleContext) throws Exception {
 		Activator.context = bundleContext;
+		
+		// Cambiamos la clase para lanzar informes Jasper
+		ProcessUtil.JASPER_STARTER_CLASS = ReportStarterOSGI.class.getName();
+		
 	}
 
 	/*
