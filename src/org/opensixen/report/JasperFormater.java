@@ -58,39 +58,113 @@
  * lo gobiernan,  GPL 2.0/CDDL 1.0/EPL 1.0.
  *
  * ***** END LICENSE BLOCK ***** */
+package org.opensixen.report;
 
-package org.opensixen.core.reports;
+import java.math.BigDecimal;
+import java.text.NumberFormat;
+import java.util.Currency;
+import java.util.Locale;
 
-import org.adempiere.util.ProcessUtil;
-import org.opensixen.report.JasperFormater;
-import org.opensixen.report.ReportStarterOSGI;
-import org.osgi.framework.BundleActivator;
-import org.osgi.framework.BundleContext;
+import org.compiere.model.I_C_BPartner;
+import org.compiere.model.MBPartner;
+import org.compiere.model.MBPartnerLocation;
+import org.compiere.model.MInOut;
+import org.compiere.model.MLocation;
+import org.compiere.util.Env;
 
-public class Activator implements BundleActivator {
+/**
+ * JasperFormater 
+ *
+ * @author Eloy Gomez
+ * Indeos Consultoria http://www.indeos.es
+ */
+public class JasperFormater {
 
-	private static BundleContext context;
-
-	public static BundleContext getContext() {
-		return context;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.osgi.framework.BundleActivator#start(org.osgi.framework.BundleContext)
+	/** Online mode	*/
+	private static boolean online = false;
+	/**
+	 * Get online mode
+	 * @return
 	 */
-	public void start(BundleContext bundleContext) throws Exception {
-		Activator.context = bundleContext;		
-		// Set formater online
-		JasperFormater.setOnline(true);
+	public static boolean isOnline() {
+		return online;
 	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.osgi.framework.BundleActivator#stop(org.osgi.framework.BundleContext)
+	
+	/**
+	 * Set online mode
+	 * @param online
 	 */
-	public void stop(BundleContext bundleContext) throws Exception {
-		Activator.context = null;
+	public static void setOnline(boolean online) {
+		JasperFormater.online = online;
 	}
-
+	
+	/**
+	 * Format qty
+	 * @param locale
+	 * @param qty
+	 * @return
+	 */
+	public static String formatQty(Locale locale, BigDecimal qty)		{
+		NumberFormat formater = NumberFormat.getInstance(locale);
+		String str = formater.format(qty);
+		return str;
+	}
+		
+	/**
+	 * Format amount with currency
+	 * @param locale
+	 * @param amount
+	 * @param isoCode
+	 * @return
+	 */
+	public static String formatAmt(Locale locale, BigDecimal amount, String isoCode)	{		
+		String str = formatQty(locale, amount);
+		Currency currency = Currency.getInstance(isoCode);		
+		return str + currency.getSymbol();
+	}
+	
+	/**
+	 * Format a location
+	 * @param C_BPartner_Location_ID
+	 * @return
+	 */
+	public static String formatLoc(Integer C_BPartner_Location_ID)	{
+		if (isOnline())	{
+			MBPartnerLocation bplocation = new MBPartnerLocation(Env.getCtx(), C_BPartner_Location_ID, null);
+			MLocation location = bplocation.getLocation(false);
+			StringBuffer address = new StringBuffer();
+			address.append(location.toStringCR());
+			String country = location.getCountry(true);
+			if (country != null)	{
+				address.append("\n").append(country);
+			}
+			return address.toString();
+		}
+		else {
+			return "C\\ General Prim, 4 1ºA\nJunto a iglesia\n03158 - Catral (Alicante)\nSpain";
+		}
+	}	
+	
+	public static String getShipToInOut(Integer M_InOut_ID)	{
+		StringBuffer address = new StringBuffer();
+		if (isOnline())	{
+			MInOut inout = new MInOut(Env.getCtx(), M_InOut_ID, null);
+			if (inout.isDropShip())	{
+				I_C_BPartner bp = inout.getDropShip_BPartner();
+				address.append(bp.getName()).append("\n");
+				address.append(formatLoc(inout.getDropShip_Location_ID()));
+			}
+			else {
+				MBPartner bp = inout.getBPartner();
+				address.append(bp.getName()).append("\n");
+				address.append(formatLoc(inout.getC_BPartner_Location_ID()));
+			}
+		}
+		else {
+			address.append("Partner de Envio").append("\n");
+			address.append(formatLoc(0));
+		}
+		return address.toString();
+	}
+	
 }
