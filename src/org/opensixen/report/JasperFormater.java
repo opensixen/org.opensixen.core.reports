@@ -61,16 +61,25 @@
 package org.opensixen.report;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.text.DateFormat;
 import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.util.Currency;
+import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 import org.compiere.model.I_C_BPartner;
 import org.compiere.model.MBPartner;
 import org.compiere.model.MBPartnerLocation;
 import org.compiere.model.MInOut;
+import org.compiere.model.MInvoice;
 import org.compiere.model.MLocation;
+import org.compiere.model.MPaySchedule;
 import org.compiere.util.Env;
+import org.opensixen.model.MVOpenItem;
+
 
 /**
  * JasperFormater 
@@ -82,6 +91,7 @@ public class JasperFormater {
 
 	/** Online mode	*/
 	private static boolean online = false;
+	
 	/**
 	 * Get online mode
 	 * @return
@@ -143,28 +153,97 @@ public class JasperFormater {
 		else {
 			return "C\\ General Prim, 4 1ºA\nJunto a iglesia\n03158 - Catral (Alicante)\nSpain";
 		}
-	}	
+	}
 	
+
+	/**
+	 * Format date
+	 * @param locale
+	 * @param date
+	 * @return
+	 */
+	public static String formatDate(Locale locale, Timestamp date)		{
+		DateFormat df = SimpleDateFormat.getDateInstance(SimpleDateFormat.SHORT, locale);
+		String str = df.format(new Date(date.getTime()));
+		return str;
+	}
+	
+	
+	/**
+	 * Get Ship To BPartner in InOut
+	 * @param M_InOut_ID
+	 * @return
+	 */
 	public static String getShipToInOut(Integer M_InOut_ID)	{
 		StringBuffer address = new StringBuffer();
 		if (isOnline())	{
 			MInOut inout = new MInOut(Env.getCtx(), M_InOut_ID, null);
 			if (inout.isDropShip())	{
 				I_C_BPartner bp = inout.getDropShip_BPartner();
-				address.append(bp.getName()).append("\n");
+				address.append("<b>").append(bp.getName()).append("</b>\n");
 				address.append(formatLoc(inout.getDropShip_Location_ID()));
 			}
 			else {
 				MBPartner bp = inout.getBPartner();
-				address.append(bp.getName()).append("\n");
+				address.append("<b>").append(bp.getName()).append("</b>\n");
 				address.append(formatLoc(inout.getC_BPartner_Location_ID()));
 			}
 		}
 		else {
-			address.append("Partner de Envio").append("\n");
+			address.append("<b>Partner de Envio</b>\n");
 			address.append(formatLoc(0));
 		}
 		return address.toString();
+	}
+	
+	
+	/**
+	 * Get BPartner in Invoice
+	 * @param C_Invoice_ID
+	 * @return
+	 */
+	public static String getInvoiceToInvoice(Integer C_Invoice_ID)	{
+		StringBuffer address = new StringBuffer();
+		if (isOnline())	{
+			MInvoice invoice = new MInvoice(Env.getCtx(), C_Invoice_ID, null);
+			
+			I_C_BPartner bp = invoice.getC_BPartner();
+			address.append("<b>").append(bp.getName()).append("</b>\n");
+			address.append(bp.getTaxID()).append("\n");
+			address.append(formatLoc(invoice.getC_BPartner_Location_ID()));
+			
+		}
+		else {
+			address.append("<b>Partner de Envio con un texto mucho mas grande del que se puediera pensar.</b>").append("\n");
+			address.append("B00000001").append("\n");
+			address.append(formatLoc(0));
+		}
+		
+		return address.toString();
+	}
+
+	/**
+	 * Get Payment terms from this invoice
+	 * @param locale
+	 * @param C_Invoice_ID
+	 * @param isoCode
+	 * @return
+	 */
+	public static String getPaymentTermInvoice(Locale locale, Integer C_Invoice_ID, String isoCode)	{
+		StringBuffer term = new StringBuffer();
+		
+		if (isOnline())	{
+			List<MVOpenItem> items = MVOpenItem.getFromInvoice(Env.getCtx(), C_Invoice_ID);
+			for (MVOpenItem item:items)		{
+				term.append(formatDate(locale, item.getDueDate())).append(": ").append(formatAmt(locale, item.getOpenAmt(), isoCode)).append("\n");
+			}
+		}
+		else {
+			
+			term.append("01/01/1979 100,00€");		
+		}
+		return term.toString();
+		
 	}
 	
 }
