@@ -209,7 +209,9 @@ public class JasperFormater {
 			
 			I_C_BPartner bp = invoice.getC_BPartner();
 			address.append("<b>").append(bp.getName()).append("</b>\n");
-			address.append(bp.getTaxID()).append("\n");
+			if (bp.getTaxID() != null)	{
+				address.append(bp.getTaxID()).append("\n");
+			}
 			address.append(formatLoc(invoice.getC_BPartner_Location_ID()));
 			
 		}
