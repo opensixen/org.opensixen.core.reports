@@ -134,6 +134,19 @@ public class JasperFormater {
 		return str + currency.getSymbol();
 	}
 	
+
+	/**
+	 * Format date
+	 * @param locale
+	 * @param date
+	 * @return
+	 */
+	public static String formatDate(Locale locale, Timestamp date)		{
+		DateFormat df = SimpleDateFormat.getDateInstance(SimpleDateFormat.SHORT, locale);
+		String str = df.format(new Date(date.getTime()));
+		return str;
+	}
+	
 	/**
 	 * Format a location
 	 * @param C_BPartner_Location_ID
@@ -156,17 +169,32 @@ public class JasperFormater {
 		}
 	}
 	
-
 	/**
-	 * Format date
-	 * @param locale
-	 * @param date
+	 * Format a full Address
+	 * @param C_BPartner_ID
+	 * @param C_Bpartner_Location_ID
+	 * @param addTaxID
 	 * @return
 	 */
-	public static String formatDate(Locale locale, Timestamp date)		{
-		DateFormat df = SimpleDateFormat.getDateInstance(SimpleDateFormat.SHORT, locale);
-		String str = df.format(new Date(date.getTime()));
-		return str;
+	public static String formatLocation(int C_BPartner_ID, int C_Bpartner_Location_ID, boolean addTaxID)	{
+		StringBuffer address = new StringBuffer();
+		if (isOnline())	{			
+			MBPartner bp = new MBPartner(Env.getCtx(), C_BPartner_ID, null);
+			address.append("<b>").append(bp.getName()).append("</b>\n");
+			if (addTaxID && bp.getTaxID() != null)	{
+				address.append(bp.getTaxID()).append("\n");
+			}
+			address.append(formatLoc(C_Bpartner_Location_ID));
+		}
+		else {
+			address.append("<b>Partner de Envio&Facturacion.</b>").append("\n");
+			if (addTaxID)	{
+				address.append("B00000001").append("\n");
+			}
+			address.append(formatLoc(0));
+		}
+		String str = address.toString();
+		return  str.replaceAll("\\n", "<br/>");
 	}
 	
 	
@@ -176,25 +204,20 @@ public class JasperFormater {
 	 * @return
 	 */
 	public static String getShipToInOut(Integer M_InOut_ID)	{
-		StringBuffer address = new StringBuffer();
 		if (isOnline())	{
 			MInOut inout = new MInOut(Env.getCtx(), M_InOut_ID, null);
 			if (inout.isDropShip())	{
-				I_C_BPartner bp = inout.getDropShip_BPartner();
-				address.append("<b>").append(bp.getName()).append("</b>\n");
-				address.append(formatLoc(inout.getDropShip_Location_ID()));
+				return formatLocation(inout.getDropShip_BPartner_ID(), inout.getDropShip_Location_ID(), false);
+				
 			}
 			else {
-				MBPartner bp = inout.getBPartner();
-				address.append("<b>").append(bp.getName()).append("</b>\n");
-				address.append(formatLoc(inout.getC_BPartner_Location_ID()));
+				return formatLocation(inout.getC_BPartner_ID(), inout.getC_BPartner_Location_ID(), false);
 			}
 		}
+		// Offline
 		else {
-			address.append("<b>Partner de Envio</b>\n");
-			address.append(formatLoc(0));
+			return formatLocation(0, 0, false);
 		}
-		return address.toString();
 	}
 	
 	
@@ -207,23 +230,49 @@ public class JasperFormater {
 		StringBuffer address = new StringBuffer();
 		if (isOnline())	{
 			MInvoice invoice = new MInvoice(Env.getCtx(), C_Invoice_ID, null);
-			
-			I_C_BPartner bp = invoice.getC_BPartner();
-			address.append("<b>").append(bp.getName()).append("</b>\n");
-			if (bp.getTaxID() != null)	{
-				address.append(bp.getTaxID()).append("\n");
-			}
-			address.append(formatLoc(invoice.getC_BPartner_Location_ID()));
+			return formatLocation(invoice.getC_BPartner_ID(), invoice.getC_BPartner_Location_ID(), true);
 			
 		}
 		else {
-			address.append("<b>Partner de Envio.</b>").append("\n");
-			address.append("B00000001").append("\n");
-			address.append(formatLoc(0));
-		}
-		
-		return address.toString();
+			return formatLocation(0, 0, true);
+		}		
 	}
+	
+	/**
+	 * Get BPartner in Order
+	 * @param C_Invoice_ID
+	 * @return
+	 */
+	public static String getInvoiceToOrder(Integer C_Order_ID)	{
+		if (isOnline())	{
+			MOrder order = new MOrder(Env.getCtx(), C_Order_ID, null);
+			return formatLocation(order.getC_BPartner_ID(), order.getC_BPartner_Location_ID(), true);
+		}
+		else {
+			return formatLocation(0, 0, true);
+		}		
+	}
+
+	/**
+	 * Get Ship To BPartner in Order
+	 * @param M_InOut_ID
+	 * @return
+	 */
+	public static String getShipToOrder(Integer C_Order_ID)	{
+		if (isOnline())	{
+			MOrder order = new MOrder(Env.getCtx(), C_Order_ID, null);
+			if (order.isDropShip())	{
+				return formatLocation(order.getDropShip_BPartner_ID(), order.getDropShip_Location_ID(), false);
+			}
+			else {
+				return formatLocation(order.getC_BPartner_ID(), order.getC_BPartner_Location_ID(), false);
+			}
+		}
+		else {
+			return formatLocation(0, 0, true);
+		}
+	}
+
 
 	/**
 	 * Get Payment terms from this invoice
@@ -247,60 +296,8 @@ public class JasperFormater {
 		}
 		return term.toString();		
 	}
-	
-	/**
-	 * Get BPartner in Order
-	 * @param C_Invoice_ID
-	 * @return
-	 */
-	public static String getInvoiceToOrder(Integer C_Order_ID)	{
-		StringBuffer address = new StringBuffer();
-		if (isOnline())	{
-			MOrder order = new MOrder(Env.getCtx(), C_Order_ID, null);
-			
-			I_C_BPartner bp = order.getC_BPartner();
-			address.append("<b>").append(bp.getName()).append("</b>\n");
-			if (bp.getTaxID() != null)	{
-				address.append(bp.getTaxID()).append("\n");
-			}
-			address.append(formatLoc(order.getC_BPartner_Location_ID()));
-			
-		}
-		else {
-			address.append("<b>Partner de Envio .</b>").append("\n");
-			address.append("B00000001").append("\n");
-			address.append(formatLoc(0));
-		}
-		
-		return address.toString();
-	}
 
-	/**
-	 * Get Ship To BPartner in Order
-	 * @param M_InOut_ID
-	 * @return
-	 */
-	public static String getShipToOrder(Integer C_Order_ID)	{
-		StringBuffer address = new StringBuffer();
-		if (isOnline())	{
-			MOrder order = new MOrder(Env.getCtx(), C_Order_ID, null);
-			if (order.isDropShip())	{
-				I_C_BPartner bp = order.getDropShip_BPartner();
-				address.append("<b>").append(bp.getName()).append("</b>\n");
-				address.append(formatLoc(order.getDropShip_Location_ID()));
-			}
-			else {
-				I_C_BPartner bp = order.getC_BPartner();
-				address.append("<b>").append(bp.getName()).append("</b>\n");
-				address.append(formatLoc(order.getC_BPartner_Location_ID()));
-			}
-		}
-		else {
-			address.append("<b>Partner de Envio</b>\n");
-			address.append(formatLoc(0));
-		}
-		return address.toString();
-	}
+	
 	
 	/**
 	 * Get Payment terms from this order
