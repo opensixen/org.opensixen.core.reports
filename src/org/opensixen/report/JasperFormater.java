@@ -76,6 +76,7 @@ import org.compiere.model.MBPartnerLocation;
 import org.compiere.model.MInOut;
 import org.compiere.model.MInvoice;
 import org.compiere.model.MLocation;
+import org.compiere.model.MOrder;
 import org.compiere.model.MPaySchedule;
 import org.compiere.util.Env;
 import org.opensixen.model.MVOpenItem;
@@ -216,7 +217,7 @@ public class JasperFormater {
 			
 		}
 		else {
-			address.append("<b>Partner de Envio con un texto mucho mas grande del que se puediera pensar.</b>").append("\n");
+			address.append("<b>Partner de Envio.</b>").append("\n");
 			address.append("B00000001").append("\n");
 			address.append(formatLoc(0));
 		}
@@ -244,8 +245,83 @@ public class JasperFormater {
 			
 			term.append("01/01/1979 100,00€");		
 		}
-		return term.toString();
-		
+		return term.toString();		
 	}
 	
+	/**
+	 * Get BPartner in Order
+	 * @param C_Invoice_ID
+	 * @return
+	 */
+	public static String getInvoiceToOrder(Integer C_Order_ID)	{
+		StringBuffer address = new StringBuffer();
+		if (isOnline())	{
+			MOrder order = new MOrder(Env.getCtx(), C_Order_ID, null);
+			
+			I_C_BPartner bp = order.getC_BPartner();
+			address.append("<b>").append(bp.getName()).append("</b>\n");
+			if (bp.getTaxID() != null)	{
+				address.append(bp.getTaxID()).append("\n");
+			}
+			address.append(formatLoc(order.getC_BPartner_Location_ID()));
+			
+		}
+		else {
+			address.append("<b>Partner de Envio .</b>").append("\n");
+			address.append("B00000001").append("\n");
+			address.append(formatLoc(0));
+		}
+		
+		return address.toString();
+	}
+
+	/**
+	 * Get Ship To BPartner in Order
+	 * @param M_InOut_ID
+	 * @return
+	 */
+	public static String getShipToOrder(Integer C_Order_ID)	{
+		StringBuffer address = new StringBuffer();
+		if (isOnline())	{
+			MOrder order = new MOrder(Env.getCtx(), C_Order_ID, null);
+			if (order.isDropShip())	{
+				I_C_BPartner bp = order.getDropShip_BPartner();
+				address.append("<b>").append(bp.getName()).append("</b>\n");
+				address.append(formatLoc(order.getDropShip_Location_ID()));
+			}
+			else {
+				I_C_BPartner bp = order.getC_BPartner();
+				address.append("<b>").append(bp.getName()).append("</b>\n");
+				address.append(formatLoc(order.getC_BPartner_Location_ID()));
+			}
+		}
+		else {
+			address.append("<b>Partner de Envio</b>\n");
+			address.append(formatLoc(0));
+		}
+		return address.toString();
+	}
+	
+	/**
+	 * Get Payment terms from this order
+	 * @param locale
+	 * @param C_Invoice_ID
+	 * @param isoCode
+	 * @return
+	 */
+	public static String getPaymentTermOrder(Locale locale, Integer C_Order_ID, String isoCode)	{
+		StringBuffer term = new StringBuffer();
+		
+		if (isOnline())	{
+			List<MVOpenItem> items = MVOpenItem.getFromOrder(Env.getCtx(), C_Order_ID);
+			for (MVOpenItem item:items)		{
+				term.append(formatDate(locale, item.getDueDate())).append(": ").append(formatAmt(locale, item.getOpenAmt(), isoCode)).append("\n");
+			}
+		}
+		else {
+			
+			term.append("01/01/1979 100,00€");		
+		}
+		return term.toString();		
+	}
 }
