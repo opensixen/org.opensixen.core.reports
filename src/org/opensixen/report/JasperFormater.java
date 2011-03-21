@@ -129,9 +129,11 @@ public class JasperFormater {
 	 * @return
 	 */
 	public static String formatAmt(Locale locale, BigDecimal amount, String isoCode)	{		
-		String str = formatQty(locale, amount);
+		NumberFormat formater = NumberFormat.getCurrencyInstance();
 		Currency currency = Currency.getInstance(isoCode);		
-		return str + currency.getSymbol();
+		formater.setCurrency(currency);
+		String str = formater.format(amount);		
+		return str;
 	}
 	
 
