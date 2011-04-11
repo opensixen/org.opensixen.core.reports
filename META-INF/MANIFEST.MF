@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Reports
-Bundle-SymbolicName: org.opensixen.core.reports
+Bundle-SymbolicName: org.opensixen.core.reports;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Bundle-Activator: org.opensixen.core.reports.Activator
 Bundle-ActivationPolicy: lazy
@@ -246,6 +246,7 @@ Export-Package: .,
  org.jfree.data.xml,
  org.jfree.data.xy,
  org.opensixen.core.reports,
+ org.opensixen.osgi.interfaces,
  org.opensixen.report,
  org.syntax.jedit,
  org.syntax.jedit.tokenmarker,

@@ -1,4 +1,4 @@
- /******* BEGIN LICENSE BLOCK *****
+/******* BEGIN LICENSE BLOCK *****
  * Versión: GPL 2.0/CDDL 1.0/EPL 1.0
  *
  * Los contenidos de este fichero están sujetos a la Licencia
@@ -62,265 +62,225 @@ package org.opensixen.report;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
-import java.text.DateFormat;
-import java.text.NumberFormat;
-import java.text.SimpleDateFormat;
-import java.util.Currency;
-import java.util.Date;
-import java.util.List;
 import java.util.Locale;
-
-import org.compiere.model.I_C_BPartner;
-import org.compiere.model.MBPartner;
-import org.compiere.model.MBPartnerLocation;
-import org.compiere.model.MInOut;
-import org.compiere.model.MInvoice;
-import org.compiere.model.MLocation;
-import org.compiere.model.MOrder;
-import org.compiere.model.MPaySchedule;
-import org.compiere.util.Env;
-import org.opensixen.model.MVOpenItem;
-
+import org.opensixen.osgi.Service;
+import org.opensixen.osgi.interfaces.IJasperFormater;
 
 /**
- * JasperFormater 
- *
- * @author Eloy Gomez
- * Indeos Consultoria http://www.indeos.es
+ * JasperFormater
+ * 
+ * @author Eloy Gomez Indeos Consultoria http://www.indeos.es
  */
 public class JasperFormater {
 
-	/** Online mode	*/
+	/** Online mode */
 	private static boolean online = false;
-	
+
+	/** Formater */
+	private static IJasperFormater formater;
+
+	/**
+	 * Static constructor
+	 */
+	static {
+		JasperFormater.formater = new OSXJasperFormater();
+	}
+
 	/**
 	 * Get online mode
+	 * 
 	 * @return
 	 */
 	public static boolean isOnline() {
 		return online;
 	}
-	
+
 	/**
 	 * Set online mode
+	 * 
 	 * @param online
 	 */
 	public static void setOnline(boolean online) {
 		JasperFormater.online = online;
+		if (online) {
+			IJasperFormater f = Service.locate(IJasperFormater.class);
+
+			// If no default formater
+			if (f != null) {
+				formater = f;
+			}
+		}
 	}
-	
+
 	/**
 	 * Format qty
+	 * 
 	 * @param locale
 	 * @param qty
 	 * @return
 	 */
-	public static String formatQty(Locale locale, BigDecimal qty)		{
-		NumberFormat formater = NumberFormat.getInstance(locale);
-		String str = formater.format(qty);
-		return str;
+	public static String formatQty(Locale locale, BigDecimal qty) {
+		return formater.formatQty(locale, qty);
 	}
-		
+
 	/**
 	 * Format amount with currency
+	 * 
 	 * @param locale
 	 * @param amount
 	 * @param isoCode
 	 * @return
 	 */
-	public static String formatAmt(Locale locale, BigDecimal amount, String isoCode)	{		
-		NumberFormat formater = NumberFormat.getCurrencyInstance();
-		Currency currency = Currency.getInstance(isoCode);		
-		formater.setCurrency(currency);
-		String str = formater.format(amount);		
-		return str;
+	public static String formatAmt(Locale locale, BigDecimal amount,
+			String isoCode) {
+		return formater.formatAmt(locale, amount, isoCode);
 	}
-	
 
 	/**
 	 * Format date
+	 * 
 	 * @param locale
 	 * @param date
 	 * @return
 	 */
-	public static String formatDate(Locale locale, Timestamp date)		{
-		DateFormat df = SimpleDateFormat.getDateInstance(SimpleDateFormat.SHORT, locale);
-		String str = df.format(new Date(date.getTime()));
-		return str;
+	public static String formatDate(Locale locale, Timestamp date) {
+		return formater.formatDate(locale, date);
 	}
-	
+
 	/**
 	 * Format a location
+	 * 
 	 * @param C_BPartner_Location_ID
 	 * @return
 	 */
-	public static String formatLoc(Integer C_BPartner_Location_ID)	{
-		if (isOnline())	{
-			MBPartnerLocation bplocation = new MBPartnerLocation(Env.getCtx(), C_BPartner_Location_ID, null);
-			MLocation location = bplocation.getLocation(false);
-			StringBuffer address = new StringBuffer();
-			address.append(location.toStringCR());
-			String country = location.getCountry(true);
-			if (country != null)	{
-				address.append("\n").append(country);
-			}
-			return address.toString();
-		}
-		else {
+	public static String formatLoc(Integer C_BPartner_Location_ID) {
+		if (isOnline()) {
+			return formater.formatLoc(C_BPartner_Location_ID);
+		} else {
 			return "C\\ General Prim, 4 1ºA\nJunto a iglesia\n03158 - Catral (Alicante)\nSpain";
 		}
 	}
-	
+
 	/**
 	 * Format a full Address
+	 * 
 	 * @param C_BPartner_ID
 	 * @param C_Bpartner_Location_ID
 	 * @param addTaxID
 	 * @return
 	 */
-	public static String formatLocation(int C_BPartner_ID, int C_Bpartner_Location_ID, boolean addTaxID)	{
+	public static String formatLocation(int C_BPartner_ID,
+			int C_Bpartner_Location_ID, boolean addTaxID) {
 		StringBuffer address = new StringBuffer();
-		if (isOnline())	{			
-			MBPartner bp = new MBPartner(Env.getCtx(), C_BPartner_ID, null);
-			address.append("<b>").append(bp.getName()).append("</b>\n");
-			if (addTaxID && bp.getTaxID() != null)	{
-				address.append(bp.getTaxID()).append("\n");
-			}
-			address.append(formatLoc(C_Bpartner_Location_ID));
-		}
-		else {
+		if (isOnline()) {
+			address.append(formater.formatLocation(C_BPartner_ID,
+					C_Bpartner_Location_ID, addTaxID));
+		} else {
+
 			address.append("<b>Partner de Envio&Facturacion.</b>").append("\n");
-			if (addTaxID)	{
+			if (addTaxID) {
 				address.append("B00000001").append("\n");
 			}
 			address.append(formatLoc(0));
 		}
 		String str = address.toString();
-		return  str.replaceAll("\\n", "<br/>");
+		return str.replaceAll("\\n", "<br/>");
 	}
-	
-	
+
 	/**
 	 * Get Ship To BPartner in InOut
+	 * 
 	 * @param M_InOut_ID
 	 * @return
 	 */
-	public static String getShipToInOut(Integer M_InOut_ID)	{
-		if (isOnline())	{
-			MInOut inout = new MInOut(Env.getCtx(), M_InOut_ID, null);
-			if (inout.isDropShip())	{
-				return formatLocation(inout.getDropShip_BPartner_ID(), inout.getDropShip_Location_ID(), false);
-				
-			}
-			else {
-				return formatLocation(inout.getC_BPartner_ID(), inout.getC_BPartner_Location_ID(), false);
-			}
+	public static String getShipToInOut(Integer M_InOut_ID) {
+		if (isOnline()) {
+			return formater.getShipToInOut(M_InOut_ID);
 		}
 		// Offline
 		else {
 			return formatLocation(0, 0, false);
 		}
 	}
-	
-	
+
 	/**
 	 * Get BPartner in Invoice
+	 * 
 	 * @param C_Invoice_ID
 	 * @return
 	 */
-	public static String getInvoiceToInvoice(Integer C_Invoice_ID)	{
-		StringBuffer address = new StringBuffer();
-		if (isOnline())	{
-			MInvoice invoice = new MInvoice(Env.getCtx(), C_Invoice_ID, null);
-			return formatLocation(invoice.getC_BPartner_ID(), invoice.getC_BPartner_Location_ID(), true);
-			
-		}
-		else {
+	public static String getInvoiceToInvoice(Integer C_Invoice_ID) {
+		if (isOnline()) {
+			return formater.getInvoiceToInvoice(C_Invoice_ID);
+		} else {
 			return formatLocation(0, 0, true);
-		}		
+		}
 	}
-	
+
 	/**
 	 * Get BPartner in Order
+	 * 
 	 * @param C_Invoice_ID
 	 * @return
 	 */
-	public static String getInvoiceToOrder(Integer C_Order_ID)	{
-		if (isOnline())	{
-			MOrder order = new MOrder(Env.getCtx(), C_Order_ID, null);
-			return formatLocation(order.getC_BPartner_ID(), order.getC_BPartner_Location_ID(), true);
-		}
-		else {
+	public static String getInvoiceToOrder(Integer C_Order_ID) {
+		if (isOnline()) {
+			return formater.getInvoiceToOrder(C_Order_ID);
+		} else {
 			return formatLocation(0, 0, true);
-		}		
+		}
 	}
 
 	/**
 	 * Get Ship To BPartner in Order
+	 * 
 	 * @param M_InOut_ID
 	 * @return
 	 */
-	public static String getShipToOrder(Integer C_Order_ID)	{
-		if (isOnline())	{
-			MOrder order = new MOrder(Env.getCtx(), C_Order_ID, null);
-			if (order.isDropShip())	{
-				return formatLocation(order.getDropShip_BPartner_ID(), order.getDropShip_Location_ID(), false);
-			}
-			else {
-				return formatLocation(order.getC_BPartner_ID(), order.getC_BPartner_Location_ID(), false);
-			}
-		}
-		else {
+	public static String getShipToOrder(Integer C_Order_ID) {
+		if (isOnline()) {
+			return formater.getShipToOrder(C_Order_ID);
+		} else {
 			return formatLocation(0, 0, true);
 		}
 	}
 
-
 	/**
 	 * Get Payment terms from this invoice
+	 * 
 	 * @param locale
 	 * @param C_Invoice_ID
 	 * @param isoCode
 	 * @return
 	 */
-	public static String getPaymentTermInvoice(Locale locale, Integer C_Invoice_ID, String isoCode)	{
-		StringBuffer term = new StringBuffer();
-		
-		if (isOnline())	{
-			List<MVOpenItem> items = MVOpenItem.getFromInvoice(Env.getCtx(), C_Invoice_ID);
-			for (MVOpenItem item:items)		{
-				term.append(formatDate(locale, item.getDueDate())).append(": ").append(formatAmt(locale, item.getOpenAmt(), isoCode)).append("\n");
-			}
+	public static String getPaymentTermInvoice(Locale locale,
+			Integer C_Invoice_ID, String isoCode) {
+		if (isOnline()) {
+			return formater
+					.getPaymentTermInvoice(locale, C_Invoice_ID, isoCode);
+		} else {
+			StringBuffer term = new StringBuffer();
+			term.append("01/01/1979 100,00€");
+			return term.toString();
 		}
-		else {
-			
-			term.append("01/01/1979 100,00€");		
-		}
-		return term.toString();		
 	}
 
-	
-	
 	/**
 	 * Get Payment terms from this order
+	 * 
 	 * @param locale
 	 * @param C_Invoice_ID
 	 * @param isoCode
 	 * @return
 	 */
-	public static String getPaymentTermOrder(Locale locale, Integer C_Order_ID, String isoCode)	{
-		StringBuffer term = new StringBuffer();
-		
-		if (isOnline())	{
-			List<MVOpenItem> items = MVOpenItem.getFromOrder(Env.getCtx(), C_Order_ID);
-			for (MVOpenItem item:items)		{
-				term.append(formatDate(locale, item.getDueDate())).append(": ").append(formatAmt(locale, item.getOpenAmt(), isoCode)).append("\n");
-			}
+	public static String getPaymentTermOrder(Locale locale, Integer C_Order_ID,
+			String isoCode) {
+		if (isOnline()) {
+			return formater.getPaymentTermOrder(locale, C_Order_ID, isoCode);
+		} else {
+			StringBuffer term = new StringBuffer();
+			term.append("01/01/1979 100,00€");
+			return term.toString();
 		}
-		else {
-			
-			term.append("01/01/1979 100,00€");		
-		}
-		return term.toString();		
 	}
 }
