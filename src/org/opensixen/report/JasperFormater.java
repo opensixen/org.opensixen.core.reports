@@ -170,21 +170,20 @@ public class JasperFormater {
 	 * @return
 	 */
 	public static String formatLocation(int C_BPartner_ID,
-			int C_Bpartner_Location_ID, boolean addTaxID) {
-		StringBuffer address = new StringBuffer();
+			int C_Bpartner_Location_ID, boolean addTaxID) {		
 		if (isOnline()) {
-			address.append(formater.formatLocation(C_BPartner_ID,
-					C_Bpartner_Location_ID, addTaxID));
+			return formater.formatLocation(C_BPartner_ID,C_Bpartner_Location_ID, addTaxID);
 		} else {
-
+			StringBuffer address = new StringBuffer();
 			address.append("<b>Partner de Envio&Facturacion.</b>").append("\n");
 			if (addTaxID) {
 				address.append("B00000001").append("\n");
 			}
 			address.append(formatLoc(0));
+			String str = address.toString();
+			return str.replaceAll("\\n", "<br/>");
 		}
-		String str = address.toString();
-		return str.replaceAll("\\n", "<br/>");
+		
 	}
 
 	/**

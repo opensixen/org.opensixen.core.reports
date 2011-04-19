@@ -68,7 +68,8 @@ public class OSXJasperFormater implements IJasperFormater {
 			address.append(bp.getTaxID()).append("\n");
 		}
 		address.append(formatLoc(C_Bpartner_Location_ID));
-		return address.toString();
+		String str = address.toString();
+		return str.replaceAll("\\n", "<br/>");		
 	}
 
 	@Override
