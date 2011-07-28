@@ -111,6 +111,7 @@ public class ReportStarter implements ProcessCall, ClientProcess
 
 	private static JRViewerProvider viewerProvider = new SwingJRViewerProvider();
 	private static JasperPrint jasperPrint;
+	protected HashMap<String, Object> params = new HashMap<String, Object>();
 
     static {
         String reportPath = System.getProperty("org.compiere.report.path");
@@ -121,7 +122,7 @@ public class ReportStarter implements ProcessCall, ClientProcess
         }
     }
 
-	private ProcessInfo processInfo;
+	protected ProcessInfo processInfo;
 	private MAttachment attachment;
 
 
@@ -404,7 +405,6 @@ public class ReportStarter implements ProcessCall, ClientProcess
 		JasperData data = null;
 		File reportFile = null;
 		String fileExtension = "";
-		HashMap<String, Object> params = new HashMap<String, Object>();
 
 		addProcessParameters(AD_PInstance_ID, params, trxName);
 		addProcessInfoParameters(params, pi.getParameter());
